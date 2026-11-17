@@ -1,0 +1,5 @@
+fastmcp==4.2.0
+py-key-value-aio[firestore]==0.4.6
+google-api-python-client==2.202.0
+google-auth==2.*
+cryptography

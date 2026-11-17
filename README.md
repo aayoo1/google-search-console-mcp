@@ -1,0 +1,94 @@
+# google-search-console-mcp
+
+Step by step build log for connecting Google Search Console to Claude through a small custom MCP server, deployed on Google Cloud Run so a whole team can use it. Each person signs in with their own Google account and only sees the Search Console properties they already have access to. Documented as I went, including the parts that did not work on the first try and how each one was fixed.
+
+Companion to [googleads_mcp](https://github.com/aayoo1/googleads_mcp), which does the same for Google Ads.
+
+## Goal
+
+Let Claude read Search Console data (queries, pages, clicks, impressions, CTR, positions, sitemaps, URL inspection) and answer SEO questions like "which queries are stuck on page 2?" or "which pages have a low CTR for their ranking?", without anyone sharing logins or service account keys.
+
+## Who this is for
+
+Anyone who works with Search Console, usually across several sites, and wants to query it from Claude. You do not need to be a developer, but you will use Google Cloud Shell (a terminal in the browser) and the Google Cloud console.
+
+## Before you start
+
+You will need:
+
+- **A Google Cloud project with billing enabled.** Cloud Run, Firestore and Secret Manager cost very little at team scale, but billing must be active. A free trial project stops serving when the trial ends.
+- **A Google Workspace account** for the "Internal" OAuth consent screen, so only people in your organization can sign in. On a personal Gmail account, use "External" and add yourself as a test user instead.
+- **Search Console access** to the sites you want to query, on the same Google account you will sign in with.
+- **Claude** with custom connectors (Claude.ai or Claude Desktop). An organization owner adds it for the whole team.
+
+Nothing needs installing on your own computer. Everything runs in Cloud Shell.
+
+## What is in this repo
+
+| Path | What it is |
+|---|---|
+| [`server/server.py`](server/server.py) | The MCP server (Python, [FastMCP](https://gofastmcp.com)) with all tools |
+| [`server/deploy.sh`](server/deploy.sh) | One command setup and deploy: APIs, Firestore, service account, secrets, Cloud Run |
+| [`server/set-secret.sh`](server/set-secret.sh) | Safely replace the OAuth client secret and restart |
+| `server/Dockerfile`, `server/requirements.txt` | Container and pinned dependencies |
+| [`examples/env.example`](examples/env.example) | Environment variables, for running locally |
+| [`docs/`](docs/) | The build log, one file per step |
+
+## Tools Claude gets
+
+| Tool | What it does |
+|---|---|
+| `list_sites` | Search Console properties you can access |
+| `search_analytics` | Any performance query: dimensions, dates, query, page, country and device filters, up to 100k rows |
+| `page_2_opportunities` | Queries at average position 11 to 20 with real impressions |
+| `ctr_opportunities` | Page 1 pages or queries with CTR well below normal for their rank, with estimated missed clicks |
+| `compare_periods` | Biggest click gains and losses, last N days vs the N days before |
+| `list_sitemaps` | Sitemap status, errors and warnings |
+| `inspect_url` | URL Inspection: index status, canonical, last crawl |
+| `whoami` | Which Google account is connected |
+
+All read only. The server only asks for the `webmasters.readonly` scope.
+
+## Build log
+
+Each step has its own file in docs/. Follow them in order.
+
+1. [Prepare the Google Cloud project](docs/01-google-cloud-project.md)
+2. [Create the OAuth client](docs/02-oauth-client.md)
+3. [Deploy the server to Cloud Run](docs/03-deploy-cloud-run.md)
+4. [Add the redirect URI and connect Claude](docs/04-connect-claude.md)
+
+## Problems hit and fixed
+
+5. [Sign in fails with `invalid_client`: the client secret was pasted wrong](docs/05-client-secret-fix.md)
+6. [Internal Server Error when clicking Connect: Firestore and Claude's client ID](docs/06-internal-server-error-fix.md)
+
+## How it works
+
+```
+Claude  --(MCP over HTTPS)-->  Cloud Run: the MCP server  --(your Google token)-->  Search Console API
+                                    |
+                                    +-- Secret Manager: OAuth client secret, JWT key, storage key
+                                    +-- Firestore: encrypted sign in sessions
+```
+
+The server is an OAuth proxy in front of Google (FastMCP's `GoogleProvider`). When you click Connect in Claude, you sign in with Google, the server keeps your Google token on its side and gives Claude its own token. Every tool call uses your token, so you only see your own properties. Sign in sessions are stored encrypted in Firestore, so restarts and redeploys do not log anyone out.
+
+## Result
+
+Working end to end as a shared Cloud Run deployment. Verified by connecting from Claude, signing in with Google and listing Search Console properties.
+
+## Security notes
+
+- No credentials are stored in this repo. The client secret lives in Secret Manager; the two other keys are generated by `deploy.sh` and also stored there.
+- Each person signs in with their own Google account and only sees the properties they already have.
+- Sign in is limited to your Workspace domain twice: the Internal consent screen, and an `ALLOWED_DOMAIN` check in the server.
+- The live Cloud Run URL for this deployment is not in this repo.
+
+## Status
+
+Built and deployed for team wide access, November 2026.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE).
