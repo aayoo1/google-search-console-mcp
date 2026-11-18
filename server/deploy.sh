@@ -55,7 +55,7 @@ gcloud run deploy "$SERVICE" \
   --region "$REGION" \
   --service-account "$SA_EMAIL" \
   --allow-unauthenticated \
-  --min-instances 1 \
+  --min-instances 0 \
   --max-instances 3 \
   --set-env-vars "GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID},BASE_URL=${BASE_URL},ALLOWED_DOMAIN=${ALLOWED_DOMAIN},GOOGLE_CLOUD_PROJECT=${PROJECT_ID}" \
   --set-secrets "GOOGLE_CLIENT_SECRET=gsc-mcp-client-secret:latest,JWT_SIGNING_KEY=gsc-mcp-jwt-key:latest,STORAGE_ENCRYPTION_KEY=gsc-mcp-storage-key:latest"

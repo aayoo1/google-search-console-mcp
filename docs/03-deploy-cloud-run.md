@@ -69,7 +69,7 @@ Cloud Run's own login check would block Claude from connecting at all. The serve
 
 ## Settings worth knowing
 
-- `--min-instances 1` keeps one copy warm, so the first request is fast.
+- `--min-instances 0` means nothing runs while nobody uses it, so it costs nothing while idle. The first request after idle waits a few seconds. I started with `--min-instances 1` (one copy kept warm), but that costs roughly USD 10 a month with nobody using it, so I switched to 0.
 - Sign in sessions are in Firestore, so `--max-instances 3` is safe: every copy sees the same sessions.
 - Do not rotate the JWT or storage keys in Secret Manager unless you want everyone to reconnect.
 

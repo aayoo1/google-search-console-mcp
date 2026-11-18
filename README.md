@@ -2,7 +2,7 @@
 
 Step by step build log for connecting Google Search Console to Claude through a small custom MCP server, deployed on Google Cloud Run so a whole team can use it. Each person signs in with their own Google account and only sees the Search Console properties they already have access to. Documented as I went, including the parts that did not work on the first try and how each one was fixed.
 
-Companion to [googleads_mcp](https://github.com/aayoo1/googleads_mcp), which does the same for Google Ads.
+Companion to [googleads_mcp](https://github.com/aayoo1/googleads_mcp) (Google Ads) and [google-analytics-mcp](https://github.com/aayoo1/google-analytics-mcp) (Google Analytics 4).
 
 ## Goal
 
